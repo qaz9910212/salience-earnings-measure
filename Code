@@ -1,0 +1,44 @@
+import pandas as pd
+
+# Read the CSV file
+df = pd.read_csv(r'C:\data\rank.csv')
+
+# Group by 'GVKEY'
+firm = df.groupby('GVKEY')
+
+# Calculate the sum of weighted ranks for normalization
+s = sum((0.7**i)*(1/20) for i in range(1, 21))
+
+# Initialize an empty DataFrame to store results
+df_aaa = pd.DataFrame()
+
+# Iterate through each group
+for k, data in firm:
+    # Reset index for proper slicing
+    data = data.reset_index(drop=True)
+    
+    # Iterate through each row in the group
+    for i in range(len(data)):
+        # Select a 20-season window
+        rank_df = data.iloc[i:i+20]
+        
+        # Check if there are at least 20 rows
+        if len(rank_df) >= 20:
+            # Calculate rank
+            rank_df['rank'] = rank_df['sigma'].rank()
+            
+            # Calculate weight based on the last rank
+            weight = (0.7**rank_df['rank'].iloc[-1]) / s
+            rank_df['weight'] = weight
+            
+            # Extract the last row as a list
+            a = list(rank_df.iloc[-1])
+            
+            # Create a DataFrame with the extracted list
+            temp_df = pd.DataFrame([a], columns=['GVKEY','yyyyqr','sigma','rank','weight'])
+            
+            # Append the DataFrame to df_aaa
+            df_aaa = df_aaa.append(temp_df, ignore_index=True)
+
+# Print the resulting DataFrame
+print(df_aaa)
